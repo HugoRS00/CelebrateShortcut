@@ -24,6 +24,8 @@ struct KeyRecorderView: NSViewRepresentable {
 class KeyRecorderNSView: NSView {
     var onKeyRecorded: ((UInt32, UInt) -> Void)?
     private var isRecording = false
+    private var lastKeyCode: UInt32 = 0
+    private var lastModifiers: UInt = 0
     private let textField = NSTextField()
 
     override init(frame: NSRect) {
@@ -70,6 +72,13 @@ class KeyRecorderNSView: NSView {
     override func keyDown(with event: NSEvent) {
         guard isRecording else { return }
 
+        // ESC cancels recording without binding
+        if event.keyCode == 53 {
+            isRecording = false
+            updateDisplay(keyCode: lastKeyCode, modifiers: lastModifiers)
+            return
+        }
+
         let mods = event.modifierFlags.intersection([.command, .option, .control, .shift])
 
         // Require at least one modifier
@@ -89,6 +98,8 @@ class KeyRecorderNSView: NSView {
     }
 
     func updateDisplay(keyCode: UInt32, modifiers: UInt) {
+        lastKeyCode = keyCode
+        lastModifiers = modifiers
         guard !isRecording else { return }
         textField.textColor = .labelColor
         textField.stringValue = shortcutString(keyCode: keyCode, modifiers: modifiers)

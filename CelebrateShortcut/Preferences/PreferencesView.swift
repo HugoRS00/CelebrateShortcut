@@ -4,7 +4,7 @@ struct PreferencesView: View {
     @ObservedObject var settingsManager: SettingsManager
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
+        VStack(alignment: .leading, spacing: 16) {
             Text("Celebrate Shortcut")
                 .font(.title2.bold())
 
@@ -29,17 +29,32 @@ struct PreferencesView: View {
                 Toggle("Play celebration sound", isOn: $settingsManager.soundEnabled)
             }
 
+            // General section
+            VStack(alignment: .leading, spacing: 8) {
+                Text("General")
+                    .font(.headline)
+                Toggle("Launch at login", isOn: $settingsManager.launchAtLogin)
+                Toggle("Check for updates automatically", isOn: $settingsManager.autoUpdateEnabled)
+            }
+
             Spacer()
 
             HStack {
+                Button("Check for Updates") {
+                    UpdateChecker.checkForUpdates(settingsManager: settingsManager, silent: false)
+                }
+                .buttonStyle(.link)
+                .font(.caption)
+
                 Spacer()
-                Text("by Hugo")
+
+                Text("v\(UpdateChecker.currentVersion) · by Hugo")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
         }
         .padding(24)
-        .frame(width: 350, height: 280)
+        .frame(width: 350, height: 340)
     }
 }
 
@@ -59,7 +74,7 @@ class PreferencesWindowController {
         let hostingView = NSHostingView(rootView: prefsView)
 
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 350, height: 280),
+            contentRect: NSRect(x: 0, y: 0, width: 350, height: 340),
             styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false

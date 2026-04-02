@@ -12,5 +12,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         hotkeyManager = HotkeyManager(settingsManager: settingsManager) { [weak self] in
             self?.celebrationController.celebrate()
         }
+
+        // Check for updates on launch (silently)
+        UpdateChecker.checkForUpdates(settingsManager: settingsManager, silent: true)
     }
 }
