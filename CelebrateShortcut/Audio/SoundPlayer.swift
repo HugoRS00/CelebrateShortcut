@@ -11,11 +11,11 @@ class SoundPlayer {
         let sampleRate = 44100.0
         format = AVAudioFormat(standardFormatWithSampleRate: sampleRate, channels: 1)!
 
-        popBuffer = generatePopSound(sampleRate: sampleRate)
+        popBuffer = generatePop(sampleRate: sampleRate)
 
         engine.attach(playerNode)
         engine.connect(playerNode, to: engine.mainMixerNode, format: format)
-        engine.mainMixerNode.outputVolume = 0.4
+        engine.mainMixerNode.outputVolume = 0.3
         try? engine.start()
     }
 
@@ -34,53 +34,59 @@ class SoundPlayer {
         playerNode.scheduleBuffer(copy, at: nil, options: [], completionHandler: nil)
     }
 
-    private func generatePopSound(sampleRate: Double) -> AVAudioPCMBuffer? {
-        // A satisfying pop is a damped resonant impulse — like tapping a hollow tube
-        // Two layered resonances give it body and character
-        let duration = 0.15
+    private func generatePop(sampleRate: Double) -> AVAudioPCMBuffer? {
+        // A real pop/click is a short filtered impulse — like snapping a bubble
+        // Not a sine wave. It's a brief burst of shaped noise with resonance.
+        let duration = 0.06
         let frameCount = AVAudioFrameCount(sampleRate * duration)
 
         guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frameCount) else { return nil }
         buffer.frameLength = frameCount
         guard let samples = buffer.floatChannelData?[0] else { return nil }
 
-        var phase1 = 0.0
-        var phase2 = 0.0
+        // Step 1: Generate the raw pop — a single-cycle impulse with resonant ring
+        var phase = 0.0
         let twoPi = 2.0 * Double.pi
 
         for i in 0..<Int(frameCount) {
             let t = Double(i) / sampleRate
             let progress = t / duration
 
-            // Layer 1: main body — warm resonance around 180Hz dropping to 120Hz
-            let freq1 = 120.0 + 60.0 * exp(-progress * 4.0)
-            phase1 += twoPi * freq1 / sampleRate
-            if phase1 > twoPi { phase1 -= twoPi }
+            // The "click" — a very fast attack impulse (first 1ms)
+            let clickDuration = 0.001
+            let click: Double
+            if t < clickDuration {
+                let p = t / clickDuration
+                click = sin(p * .pi) * 0.7  // half-sine impulse
+            } else {
+                click = 0
+            }
 
-            // Layer 2: higher harmonic "tap" — 400Hz, decays much faster
-            let freq2 = 400.0 * exp(-progress * 2.0)
-            phase2 += twoPi * freq2 / sampleRate
-            if phase2 > twoPi { phase2 -= twoPi }
+            // The "body" — resonant ring at ~200Hz, decays fast
+            let bodyFreq = 200.0
+            phase += twoPi * bodyFreq / sampleRate
+            if phase > twoPi { phase -= twoPi }
 
-            // Smooth attack (2ms raised cosine) — no click
-            let attackTime = 0.002
-            let attack = t < attackTime ? 0.5 * (1.0 - cos(Double.pi * t / attackTime)) : 1.0
+            let bodyAttack = min(t / 0.001, 1.0)
+            let bodyDecay = exp(-progress * 8.0)
+            let body = sin(phase) * bodyAttack * bodyDecay * 0.4
 
-            // Body: gentle decay
-            let decay1 = exp(-progress * 3.5)
-            // Tap: fast decay gives the initial "pop" transient
-            let decay2 = exp(-progress * 12.0)
+            // The "air" — very soft high-frequency shimmer, gone in 10ms
+            let airDecay = exp(-progress * 20.0)
+            let air = sin(phase * 3.7) * airDecay * 0.08
 
-            // Smooth cosine tail — no abrupt cutoff at the end
-            let tailStart = 0.7
-            let tail = progress > tailStart ? 0.5 * (1.0 + cos(Double.pi * (progress - tailStart) / (1.0 - tailStart))) : 1.0
+            // Combine
+            let sample = click + body + air
 
-            let body = sin(phase1) * decay1 * 0.6
-            let tap  = sin(phase2) * decay2 * 0.3
+            samples[i] = Float(sample)
+        }
 
-            let sample = (body + tap) * attack * tail
-
-            samples[i] = Float(sample * 0.5)
+        // Step 2: Smooth the edges — gentle fade on last 5ms to prevent any click at the end
+        let fadeSamples = Int(0.005 * sampleRate)
+        let startFade = Int(frameCount) - fadeSamples
+        for i in startFade..<Int(frameCount) {
+            let fade = Float(Int(frameCount) - 1 - i) / Float(fadeSamples)
+            samples[i] *= fade
         }
 
         return buffer

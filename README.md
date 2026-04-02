@@ -31,6 +31,8 @@ That's it. The script builds the app, installs it to `~/Applications`, and asks 
 | **🖱️ Trigger from menu** | Click the 🎉 in your menu bar → **Celebrate!** |
 | **⌨️ Change shortcut** | Menu bar 🎉 → **Preferences** → click the shortcut box → press your new combo |
 | **🔇 Toggle sound** | Menu bar 🎉 → **Preferences** → toggle **Play celebration sound** |
+| **🔄 Auto-update** | Checks GitHub for new releases on launch. Toggle in Preferences |
+| **🚀 Launch at login** | Menu bar 🎉 → **Preferences** → toggle **Launch at login** |
 
 ---
 
@@ -50,14 +52,6 @@ Click the 🎉 in your menu bar → **Quit**
 # Or from terminal:
 pkill -f CelebrateShortcut
 ```
-
----
-
-## Start at Login
-
-1. Open **System Settings** → **General** → **Login Items**
-2. Click **+**
-3. Select **Celebrate Shortcut** from `~/Applications`
 
 ---
 
