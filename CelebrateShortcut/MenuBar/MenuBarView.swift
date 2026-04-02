@@ -3,7 +3,6 @@ import SwiftUI
 struct MenuBarView: View {
     @EnvironmentObject var settingsManager: SettingsManager
     @EnvironmentObject var celebrationController: CelebrationController
-    @State private var showingPreferences = false
 
     var body: some View {
         VStack(spacing: 4) {
@@ -29,12 +28,7 @@ struct MenuBarView: View {
                     NSWorkspace.shared.open(url)
                 }
             } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "person.circle.fill")
-                        .font(.system(size: 14))
-                    Text("by HUGO")
-                        .font(.system(size: 12, weight: .semibold))
-                }
+                Label("by HUGO", systemImage: "person.circle.fill")
             }
 
             // tradingwizard.ai ad spot
@@ -43,14 +37,7 @@ struct MenuBarView: View {
                     NSWorkspace.shared.open(url)
                 }
             } label: {
-                HStack(spacing: 4) {
-                    Text("⚡")
-                    Text("Supercharge your trading")
-                        .font(.system(size: 11))
-                    Text("— tradingwizard.ai")
-                        .font(.system(size: 10))
-                        .foregroundStyle(.secondary)
-                }
+                Label("Supercharge your trading — tradingwizard.ai", systemImage: "bolt.fill")
             }
 
             Divider()
